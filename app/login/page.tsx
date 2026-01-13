@@ -55,9 +55,9 @@ export default function LoginPage() {
             <div className="flex-1 flex items-center justify-center px-4 py-12">
                 <div className="w-full max-w-md bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl shadow-blue-900/10 border border-white/50 p-8 md:p-10 animate-in fade-in zoom-in-95 duration-500">
                     <div className="flex flex-col items-center text-center space-y-6 mb-8">
-                        <div className="flex items-center gap-3">
-                            <div className="bg-blue-600 p-3 rounded-xl shadow-lg shadow-blue-600/20">
-                                <CheckCircle2 className="w-8 h-8 text-white" />
+                        <div className="flex items-center gap-4">
+                            <div className="w-16 h-16 relative animate-in zoom-in duration-500">
+                                <img src="/logo.png" alt="Logo" className="w-full h-full object-contain drop-shadow-xl" />
                             </div>
                             <div>
                                 <h1 className="text-3xl font-bold tracking-tight text-slate-900 leading-none">

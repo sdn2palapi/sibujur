@@ -89,8 +89,8 @@ export function AdminSidebar() {
                         onClick={toggleCollapse}
                         title="Klik untuk mengecilkan menu"
                     >
-                        <div className="bg-blue-600 p-1.5 rounded-lg shadow-lg shadow-blue-600/20 group-hover:scale-105 transition-transform">
-                            <CheckCircle2 className="w-5 h-5 text-white" />
+                        <div className="relative w-10 h-10 group-hover:scale-105 transition-transform">
+                            <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
                         </div>
                         <div className={cn("transition-opacity duration-200", isCollapsed ? "opacity-0 w-0 hidden" : "opacity-100")}>
                             <span className="font-bold text-slate-900 text-lg block leading-none whitespace-nowrap">

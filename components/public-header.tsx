@@ -6,8 +6,8 @@ export function PublicHeader() {
         <header className="w-full py-6 px-4 md:px-8 flex items-center justify-between bg-white/30 backdrop-blur-xl sticky top-0 z-50 border-b border-white/20 shadow-sm animate-in fade-in slide-in-from-top-4 duration-700">
             <div className="max-w-7xl mx-auto w-full flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                    <div className="bg-blue-600 p-2 rounded-lg shadow-lg shadow-blue-600/20">
-                        <CheckCircle2 className="w-6 h-6 text-white" />
+                    <div className="w-10 h-10 relative">
+                        <img src="/logo.png" alt="Logo" className="w-full h-full object-contain drop-shadow-md" />
                     </div>
                     <div>
                         <h1 className="text-xl md:text-2xl font-bold tracking-tight text-slate-900 leading-none">
