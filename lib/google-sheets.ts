@@ -1,6 +1,6 @@
 
 // Hardcoded URL as requested by user to avoid .env setup
-const GOOGLE_SCRIPT_URL = process.env.GOOGLE_SCRIPT_URL || "https://script.google.com/macros/s/AKfycbx2VGd7QPK8F3zDfWkLDbK2Jf2KUNnoTP9NLrJbUZCvw1z20x76Q4pqveBjydEIv-oIjw/exec";
+const GOOGLE_SCRIPT_URL = process.env.GOOGLE_SCRIPT_URL || "https://script.google.com/macros/s/AKfycbxo6WaZvX4aLIuyk99jB6g5awdR6rBHWgZqLsbGFww0OkHGPtjyeb2EVyr903o9NDRLmw/exec";
 
 if (!GOOGLE_SCRIPT_URL) {
     console.warn("GOOGLE_SCRIPT_URL is not defined.");
