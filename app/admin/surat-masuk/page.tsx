@@ -35,6 +35,13 @@ export default function SuratMasukPage() {
                 pengirim: (e.target as any)[2].value,
                 perihal: (e.target as any)[3].value,
                 fileUrl: fileUrl,
+                // Add redundant keys to ensure GAS picks it up
+                file_url: fileUrl,
+                link: fileUrl, Link: fileUrl,
+                lampiran: fileUrl, Lampiran: fileUrl,
+                url: fileUrl, Url: fileUrl,
+                file: fileUrl, File: fileUrl,
+                bukti: fileUrl, Bukti: fileUrl,
                 penginput: user.name,
                 rawDate: (e.target as any)[1].value,
                 status: "Archived"
