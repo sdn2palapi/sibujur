@@ -1,18 +1,38 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { LetterForm } from "@/components/letter-form";
 import { LetterTable } from "@/components/letter-table";
-import { PenTool, History } from "lucide-react";
+import { PenTool, History, AlertCircle } from "lucide-react";
 
 export default function AdminSuratKeluar() {
     const [activeTab, setActiveTab] = useState<"input" | "riwayat">("input");
+    const [unuploadedCount, setUnuploadedCount] = useState<number>(0);
+
+    const fetchPendingCount = async () => {
+        try {
+            const res = await fetch("/api/surat-keluar", { cache: "no-store" });
+            if (res.ok) {
+                const data = await res.json();
+                if (Array.isArray(data)) {
+                    const count = data.filter((item: any) => !(item.fileUrl || item.file_url || item.url || item.link || item.lampiran)).length;
+                    setUnuploadedCount(count);
+                }
+            }
+        } catch (e) {
+            // ignore
+        }
+    };
+
+    useEffect(() => {
+        fetchPendingCount();
+    }, [activeTab]);
 
     return (
         <div className="space-y-8 pb-10">
             <div>
                 <h1 className="text-2xl font-bold text-slate-900">Surat Keluar</h1>
-                <p className="text-slate-500">Kelola surat keluar: buat baru atau lihat riwayat.</p>
+                <p className="text-slate-500">Kelola surat keluar: buat baru atau verifikasi riwayat dokumen.</p>
             </div>
 
             {/* Tabs */}
@@ -35,7 +55,13 @@ export default function AdminSuratKeluar() {
                         }`}
                 >
                     <History className="w-4 h-4" />
-                    Riwayat
+                    <span>Riwayat & Verifikasi</span>
+                    {unuploadedCount > 0 && (
+                        <span className="flex items-center gap-1 bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded-full shadow-sm shadow-red-600/30 animate-pulse">
+                            <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping"></span>
+                            {unuploadedCount} Belum Upload
+                        </span>
+                    )}
                 </button>
             </div>
 

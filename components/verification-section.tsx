@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Search, FileText, CheckCircle, XCircle, Loader2, Shield } from "lucide-react";
+import { Search, FileText, CheckCircle, XCircle, Loader2, Shield, AlertTriangle, AlertCircle, Upload } from "lucide-react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { FilePreviewModal } from "@/components/file-preview-modal";
+import { FileUploadModal } from "@/components/file-upload-modal";
 
 // Mock Data Removed - Using Real API
 
@@ -11,6 +13,8 @@ export function VerificationSection() {
     const [query, setQuery] = useState("");
     const [result, setResult] = useState<any | null | "not-found">(null);
     const [loading, setLoading] = useState(false);
+    const [showPreview, setShowPreview] = useState(false);
+    const [isUploadOpen, setIsUploadOpen] = useState(false);
 
     const handleSearch = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -66,7 +70,38 @@ export function VerificationSection() {
         }
     };
 
-    const [showPreview, setShowPreview] = useState(false);
+    const handleFileUploaded = async (file: File, url: string) => {
+        if (!result) return;
+        try {
+            const res = await fetch("/api/surat-keluar", {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    id: result.id,
+                    fileUrl: url,
+                    file_url: url,
+                    link: url, Link: url,
+                    lampiran: url, Lampiran: url,
+                    url: url, Url: url,
+                    file: url, File: url,
+                    bukti: url, Bukti: url
+                }),
+            });
+
+            if (res.ok) {
+                setResult((prev: any) => ({ ...prev, fileUrl: url }));
+                setIsUploadOpen(false);
+                toast.success("File surat berhasil di-upload dan status surat kini Terverifikasi!");
+            } else {
+                toast.error("Gagal memperbarui file surat ke database.");
+            }
+        } catch (error) {
+            console.error("Error updating file URL:", error);
+            toast.error("Terjadi kesalahan saat menyimpan file.");
+        }
+    };
+
+    const isUploaded = !!(result && result !== "not-found" && result.fileUrl);
 
     return (
         <section className="flex flex-col items-center justify-center w-full max-w-2xl mx-auto px-4 py-12 md:py-20 gap-8">
@@ -140,22 +175,46 @@ export function VerificationSection() {
                 )}
 
                 {result && result !== "not-found" && (
-                    <div className="w-full bg-white border-2 border-green-500/20 rounded-2xl p-6 shadow-2xl shadow-green-500/10 animate-in fade-in slide-in-from-bottom-4 relative overflow-hidden">
-                        <div className="absolute top-0 right-0 bg-green-500 text-white text-xs font-bold px-4 py-1 rounded-bl-xl">
-                            ✅ DATA BUJUR / VALID
-                        </div>
+                    <div
+                        className={cn(
+                            "w-full bg-white rounded-2xl p-6 shadow-2xl animate-in fade-in slide-in-from-bottom-4 relative overflow-hidden border-2",
+                            isUploaded
+                                ? "border-green-500/20 shadow-green-500/10"
+                                : "border-red-500/40 shadow-red-500/15 bg-gradient-to-b from-white to-red-50/20"
+                        )}
+                    >
+                        {/* Status Badge Top Right */}
+                        {isUploaded ? (
+                            <div className="absolute top-0 right-0 bg-green-500 text-white text-xs font-bold px-4 py-1 rounded-bl-xl shadow-sm">
+                                ✅ DATA BUJUR / TERVERIFIKASI
+                            </div>
+                        ) : (
+                            <div className="absolute top-0 right-0 bg-red-600 text-white text-xs font-bold px-4 py-1 rounded-bl-xl shadow-sm animate-pulse flex items-center gap-1">
+                                <span className="w-2 h-2 rounded-full bg-white animate-ping"></span>
+                                🔴 PERHATIAN: FILE BELUM DI-UPLOAD
+                            </div>
+                        )}
 
-                        <div className="flex flex-col md:flex-row gap-6 items-start">
-                            <div className="bg-green-50 p-4 rounded-2xl flex-shrink-0">
-                                <FileText className="w-12 h-12 text-green-600" />
+                        <div className="flex flex-col md:flex-row gap-6 items-start mt-2 sm:mt-0">
+                            <div
+                                className={cn(
+                                    "p-4 rounded-2xl flex-shrink-0",
+                                    isUploaded ? "bg-green-50" : "bg-red-100 text-red-600"
+                                )}
+                            >
+                                {isUploaded ? (
+                                    <FileText className="w-12 h-12 text-green-600" />
+                                ) : (
+                                    <AlertTriangle className="w-12 h-12 text-red-600 animate-pulse" />
+                                )}
                             </div>
 
-                            <div className="space-y-4 flex-1">
+                            <div className="space-y-4 flex-1 w-full">
                                 <div>
                                     <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
                                         Nomor Surat
                                     </p>
-                                    <h3 className="text-2xl font-bold text-slate-900">
+                                    <h3 className="text-2xl font-bold text-slate-900 font-mono">
                                         {result.nomor}
                                     </h3>
                                 </div>
@@ -173,25 +232,50 @@ export function VerificationSection() {
                                         </p>
                                         <p className="font-medium text-slate-700">{result.tanggal}</p>
                                     </div>
+                                    <div>
+                                        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                                            Tujuan
+                                        </p>
+                                        <p className="font-medium text-slate-700">{result.tujuan || "-"}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                                            Penginput
+                                        </p>
+                                        <p className="font-medium text-slate-700">{result.penginput || "-"}</p>
+                                    </div>
                                 </div>
 
                                 <div className="pt-4 border-t border-slate-100">
-                                    {result.fileUrl ? (
+                                    {isUploaded ? (
                                         <button
                                             onClick={() => setShowPreview(true)}
-                                            className="w-full md:w-auto bg-slate-900 hover:bg-slate-800 text-white px-6 py-3 rounded-xl font-medium transition-colors flex items-center justify-center gap-2"
+                                            className="w-full md:w-auto bg-slate-900 hover:bg-slate-800 text-white px-6 py-3 rounded-xl font-medium transition-colors flex items-center justify-center gap-2 shadow-md"
                                         >
                                             <FileText className="w-4 h-4" />
                                             Lihat Lampiran Surat
                                         </button>
                                     ) : (
-                                        <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex items-center gap-3 text-slate-500">
-                                            <div className="bg-slate-200 p-2 rounded-full">
-                                                <Shield className="w-4 h-4 text-slate-500" />
+                                        /* Red Warning Box for Unuploaded Letter */
+                                        <div className="bg-red-50 border-2 border-red-200 rounded-2xl p-4 md:p-5 flex flex-col gap-3 text-red-900 shadow-sm">
+                                            <div className="flex items-center gap-2">
+                                                <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 animate-pulse" />
+                                                <h4 className="font-bold text-sm md:text-base text-red-800">
+                                                    PERHATIAN: FILE SURAT BELUM DI-UPLOAD!
+                                                </h4>
                                             </div>
-                                            <p className="text-sm">
-                                                Lampiran tidak tersedia atau disembunyikan karena alasan privasi.
+                                            <p className="text-xs md:text-sm text-red-700 leading-relaxed">
+                                                Nomor surat <strong>{result.nomor}</strong> telah terdaftar di sistem buku agenda sekolah, namun berkas fisik/scan surat keluar <strong>BELUM DI-UPLOAD</strong>. Harap admin atau staf penginput segera mengunggah file surat keluar tersebut agar verifikasi keaslian dokumen sah dan dapat diakses.
                                             </p>
+                                            <div className="pt-1 flex flex-wrap gap-2">
+                                                <button
+                                                    onClick={() => setIsUploadOpen(true)}
+                                                    className="bg-red-600 hover:bg-red-700 active:scale-95 text-white font-bold text-xs md:text-sm px-5 py-2.5 rounded-xl transition-all shadow-md shadow-red-600/30 flex items-center gap-2"
+                                                >
+                                                    <Upload className="w-4 h-4" />
+                                                    Upload File Surat Ini Sekarang
+                                                </button>
+                                            </div>
                                         </div>
                                     )}
                                 </div>
@@ -208,6 +292,17 @@ export function VerificationSection() {
                     onClose={() => setShowPreview(false)}
                     fileName={`Surat - ${result.nomor}`}
                     fileUrl={result.fileUrl}
+                />
+            )}
+
+            {/* Direct Upload Modal from Verification */}
+            {result && result !== "not-found" && (
+                <FileUploadModal
+                    isOpen={isUploadOpen}
+                    onClose={() => setIsUploadOpen(false)}
+                    onUpload={handleFileUploaded}
+                    title={`Upload Berkas Surat: ${result?.nomor}`}
+                    customFilename={result?.nomor}
                 />
             )}
         </section>

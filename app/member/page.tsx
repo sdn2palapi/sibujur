@@ -2,7 +2,7 @@
 
 import { useUser } from "@/components/ui/user-context";
 import { AnimatedBackground } from "@/components/animated-background";
-import { FileText, Inbox, Clock, ArrowRight, ArrowUpRight, ArrowDownLeft, TrendingUp } from "lucide-react";
+import { FileText, Inbox, Clock, ArrowRight, ArrowUpRight, ArrowDownLeft, TrendingUp, AlertTriangle, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { DashboardChart } from "@/components/dashboard-chart";
@@ -13,6 +13,7 @@ export default function MemberDashboard() {
     const [stats, setStats] = useState({
         suratMasuk: 0,
         suratKeluar: 0,
+        suratKeluarBelumUpload: 0,
         recentActivity: [] as any[]
     });
     const [chartData, setChartData] = useState<any[]>([]);
@@ -83,11 +84,14 @@ export default function MemberDashboard() {
                         ...masuk.map((m: any) => ({ ...m, type: 'masuk' })),
                         ...keluar.map((k: any) => ({ ...k, type: 'keluar' }))
                     ].sort((a, b) => new Date(b.rawDate).getTime() - new Date(a.rawDate).getTime())
-                        .slice(0, 5);
+                        .slice(0, 6);
+
+                    const belumUploadCount = keluar.filter((item: any) => !(item.fileUrl || item.file_url || item.url || item.link || item.lampiran)).length;
 
                     setStats({
                         suratMasuk: masuk.length,
                         suratKeluar: keluar.length,
+                        suratKeluarBelumUpload: belumUploadCount,
                         recentActivity: allActivity
                     });
                 }
@@ -146,6 +150,37 @@ export default function MemberDashboard() {
                 </p>
             </div>
 
+            {/* Attention Banner if any letters are missing files */}
+            {stats.suratKeluarBelumUpload > 0 && (
+                <div className="relative z-10 bg-gradient-to-r from-red-500 via-rose-600 to-red-600 text-white rounded-2xl p-5 shadow-lg shadow-red-500/20 flex flex-col md:flex-row md:items-center justify-between gap-4 animate-in slide-in-from-top-4 duration-500">
+                    <div className="flex items-center gap-3.5">
+                        <div className="w-11 h-11 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center flex-shrink-0 animate-bounce">
+                            <AlertTriangle className="w-6 h-6 text-white" />
+                        </div>
+                        <div>
+                            <div className="flex items-center gap-2">
+                                <h3 className="font-bold text-base md:text-lg">
+                                    Perhatian: Ada {stats.suratKeluarBelumUpload} Surat Keluar Belum Di-upload!
+                                </h3>
+                                <span className="bg-white text-red-600 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide">
+                                    Perlu Diupload
+                                </span>
+                            </div>
+                            <p className="text-xs md:text-sm text-red-100 mt-0.5">
+                                Surat keluar yang bertanda merah belum memiliki berkas dokumen fisik/scan. Segera upload agar verifikasi arsip lengkap.
+                            </p>
+                        </div>
+                    </div>
+                    <Link
+                        href="/member/surat-keluar"
+                        className="px-4 py-2.5 bg-white text-red-600 hover:bg-red-50 active:scale-95 text-xs md:text-sm font-bold rounded-xl shadow transition-all self-start md:self-center whitespace-nowrap flex items-center gap-2"
+                    >
+                        <span>Upload Sekarang</span>
+                        <ArrowUpRight className="w-4 h-4" />
+                    </Link>
+                </div>
+            )}
+
             {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10">
                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-all group">
@@ -168,6 +203,12 @@ export default function MemberDashboard() {
                         <div>
                             <p className="text-sm font-medium text-slate-500">Surat Keluar</p>
                             <h3 className="text-2xl font-bold text-slate-900">{stats.suratKeluar}</h3>
+                            {stats.suratKeluarBelumUpload > 0 && (
+                                <p className="text-xs font-bold text-red-600 mt-1 flex items-center gap-1 animate-pulse">
+                                    <AlertCircle className="w-3 h-3" />
+                                    {stats.suratKeluarBelumUpload} belum di-upload file
+                                </p>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -226,10 +267,14 @@ export default function MemberDashboard() {
 
                     <Link href="/member/surat-keluar" className="flex-1 group relative overflow-hidden bg-gradient-to-br from-emerald-500 to-emerald-600 p-6 rounded-2xl text-white shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/30 transition-all flex flex-col justify-center">
                         <div className="relative z-10">
-                            <h3 className="text-lg font-bold mb-1">Input Surat Keluar</h3>
-                            <p className="text-emerald-100 text-sm mb-4">Buat surat keluar baru.</p>
+                            <h3 className="text-lg font-bold mb-1">Surat Keluar</h3>
+                            <p className="text-emerald-100 text-sm mb-4">
+                                {stats.suratKeluarBelumUpload > 0
+                                    ? `${stats.suratKeluarBelumUpload} surat perlu upload file`
+                                    : "Buat atau verifikasi surat keluar."}
+                            </p>
                             <span className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-lg text-xs font-medium group-hover:bg-white/30 transition-colors">
-                                Mulai Input <FileText className="w-3 h-3" />
+                                Buka Surat Keluar <FileText className="w-3 h-3" />
                             </span>
                         </div>
                         <FileText className="absolute -bottom-2 -right-2 w-24 h-24 text-white/10 rotate-12 group-hover:scale-110 transition-transform duration-500" />
@@ -248,25 +293,40 @@ export default function MemberDashboard() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {stats.recentActivity.length > 0 ? (
-                        stats.recentActivity.map((item, idx) => (
-                            <div key={idx} className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50 transition-colors border border-slate-100 hover:border-slate-200">
-                                <div className={`mt-1 p-2 rounded-lg flex-shrink-0 ${item.type === 'masuk' ? 'bg-blue-100 text-blue-600' : 'bg-emerald-100 text-emerald-600'
-                                    }`}>
-                                    {item.type === 'masuk' ? <ArrowDownLeft className="w-4 h-4" /> : <ArrowUpRight className="w-4 h-4" />}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-semibold text-slate-900 truncate">
-                                        {item.perihal}
-                                    </p>
-                                    <div className="flex items-center gap-2 mt-1">
-                                        <span className="text-xs font-mono text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
-                                            {item.nomor}
-                                        </span>
-                                        <span className="text-xs text-slate-400">• {item.tanggal}</span>
+                        stats.recentActivity.map((item, idx) => {
+                            const isKeluar = item.type === 'keluar';
+                            const hasFile = !!(item.fileUrl || item.file_url || item.url || item.link || item.lampiran);
+                            return (
+                                <div key={idx} className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50 transition-colors border border-slate-100 hover:border-slate-200">
+                                    <div className={`mt-1 p-2 rounded-lg flex-shrink-0 ${item.type === 'masuk' ? 'bg-blue-100 text-blue-600' : 'bg-emerald-100 text-emerald-600'
+                                        }`}>
+                                        {item.type === 'masuk' ? <ArrowDownLeft className="w-4 h-4" /> : <ArrowUpRight className="w-4 h-4" />}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-semibold text-slate-900 truncate">
+                                            {item.perihal}
+                                        </p>
+                                        <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                            <span className="text-xs font-mono text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
+                                                {item.nomor}
+                                            </span>
+                                            {isKeluar && (
+                                                hasFile ? (
+                                                    <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded">
+                                                        Terverifikasi
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-[10px] font-bold text-red-700 bg-red-100 border border-red-300 px-1.5 py-0.5 rounded animate-pulse">
+                                                        🔴 Belum Upload
+                                                    </span>
+                                                )
+                                            )}
+                                            <span className="text-xs text-slate-400">• {item.tanggal}</span>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        ))
+                            );
+                        })
                     ) : (
                         <div className="col-span-full text-center py-8 text-slate-400 text-sm">
                             Belum ada aktivitas surat.

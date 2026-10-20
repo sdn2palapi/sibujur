@@ -1,6 +1,6 @@
 "use client";
 
-import { FileText, Calendar, Users, TrendingUp, ArrowUpRight, Clock, Inbox, Loader2 } from "lucide-react";
+import { FileText, Calendar, Users, TrendingUp, ArrowUpRight, Clock, Inbox, Loader2, AlertTriangle, AlertCircle } from "lucide-react";
 import { useState, useEffect } from "react";
 import { DashboardChart } from "@/components/dashboard-chart";
 import Link from "next/link";
@@ -12,7 +12,8 @@ export default function AdminDashboardPage() {
         totalUsers: 0,
         totalSuratKeluar: 0,
         totalSuratMasuk: 0,
-        suratBulanIni: 0
+        suratBulanIni: 0,
+        suratKeluarBelumUpload: 0
     });
     const [chartData, setChartData] = useState<any[]>([]);
     const [recentLetters, setRecentLetters] = useState<any[]>([]);
@@ -90,11 +91,14 @@ export default function AdminDashboardPage() {
                         return d && d.getMonth() === currentMonth && d.getFullYear() === currentYear;
                     }).length;
 
+                    const belumUploadCount = keluar.filter((item: any) => !(item.fileUrl || item.file_url || item.url || item.link || item.lampiran)).length;
+
                     setStats({
                         totalUsers: users.length,
                         totalSuratKeluar: keluar.length,
                         totalSuratMasuk: masuk.length,
-                        suratBulanIni: masukBulanIni + keluarBulanIni
+                        suratBulanIni: masukBulanIni + keluarBulanIni,
+                        suratKeluarBelumUpload: belumUploadCount
                     });
 
                     // Extract Available Years
@@ -196,11 +200,42 @@ export default function AdminDashboardPage() {
     }
 
     return (
-        <div className="space-y-10 pb-10 animate-in fade-in duration-500">
+        <div className="space-y-8 pb-10 animate-in fade-in duration-500">
             <div>
                 <h1 className="text-2xl font-bold text-slate-900">Dashboard Overview</h1>
                 <p className="text-slate-500">Ringkasan aktivitas surat keluar dan kinerja pengguna.</p>
             </div>
+
+            {/* Attention banner if any outgoing letters are missing files */}
+            {stats.suratKeluarBelumUpload > 0 && (
+                <div className="bg-gradient-to-r from-red-500 via-rose-600 to-red-600 text-white rounded-2xl p-5 shadow-lg shadow-red-500/20 flex flex-col md:flex-row md:items-center justify-between gap-4 animate-in slide-in-from-top-4 duration-500">
+                    <div className="flex items-center gap-3.5">
+                        <div className="w-11 h-11 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center flex-shrink-0 animate-bounce">
+                            <AlertTriangle className="w-6 h-6 text-white" />
+                        </div>
+                        <div>
+                            <div className="flex items-center gap-2">
+                                <h3 className="font-bold text-base md:text-lg">
+                                    Perhatian: Ada {stats.suratKeluarBelumUpload} Surat Keluar Belum Di-upload File!
+                                </h3>
+                                <span className="bg-white text-red-600 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide">
+                                    Perlu Perhatian
+                                </span>
+                            </div>
+                            <p className="text-xs md:text-sm text-red-100 mt-0.5">
+                                Terdapat surat keluar bertanda merah yang belum memiliki lampiran berkas. Segera upload agar verifikasi surat lengkap.
+                            </p>
+                        </div>
+                    </div>
+                    <Link
+                        href="/admin/surat-keluar"
+                        className="px-4 py-2.5 bg-white text-red-600 hover:bg-red-50 active:scale-95 text-xs md:text-sm font-bold rounded-xl shadow transition-all self-start md:self-center whitespace-nowrap flex items-center gap-2"
+                    >
+                        <span>Lihat & Upload Sekarang</span>
+                        <ArrowUpRight className="w-4 h-4" />
+                    </Link>
+                </div>
+            )}
 
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -208,10 +243,17 @@ export default function AdminDashboardPage() {
                     <div>
                         <p className="text-slate-500 text-sm font-medium mb-1">Total Surat Keluar</p>
                         <h3 className="text-3xl font-bold text-slate-900">{stats.totalSuratKeluar}</h3>
-                        <div className="flex items-center gap-1 text-green-600 text-xs font-medium mt-2 bg-green-50 w-fit px-2 py-1 rounded-full">
-                            <ArrowUpRight className="w-3 h-3" />
-                            <span>Data Realtime</span>
-                        </div>
+                        {stats.suratKeluarBelumUpload > 0 ? (
+                            <div className="flex items-center gap-1 text-red-600 text-xs font-bold mt-2 bg-red-50 w-fit px-2 py-1 rounded-full border border-red-200 animate-pulse">
+                                <AlertCircle className="w-3 h-3" />
+                                <span>{stats.suratKeluarBelumUpload} Belum Upload</span>
+                            </div>
+                        ) : (
+                            <div className="flex items-center gap-1 text-green-600 text-xs font-medium mt-2 bg-green-50 w-fit px-2 py-1 rounded-full">
+                                <ArrowUpRight className="w-3 h-3" />
+                                <span>Semua Terverifikasi</span>
+                            </div>
+                        )}
                     </div>
                     <div className="p-3 bg-blue-50 rounded-xl text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors">
                         <FileText className="w-6 h-6" />
@@ -367,6 +409,7 @@ export default function AdminDashboardPage() {
                                 </th>
                                 <th className="hidden sm:table-cell px-6 py-4">Tanggal</th>
                                 <th className="hidden md:table-cell px-6 py-4">Penginput</th>
+                                <th className="px-4 py-3 sm:px-6 sm:py-4 text-center">Status Berkas</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
@@ -374,28 +417,48 @@ export default function AdminDashboardPage() {
                                 recentLetters
                                     .filter(l => l.type === (activeTab === 'masuk' ? 'Masuk' : 'Keluar'))
                                     .slice(0, 5)
-                                    .map((letter, index) => (
-                                        <tr key={index} className="hover:bg-slate-50/50 transition-colors">
-                                            <td className="px-4 py-3 sm:px-6 sm:py-4 font-medium text-slate-900 text-xs sm:text-sm">
-                                                {letter.nomor}
-                                            </td>
-                                            <td className="px-4 py-3 sm:px-6 sm:py-4 text-slate-600 max-w-[150px] sm:max-w-[200px] truncate" title={letter.perihal}>
-                                                {letter.perihal}
-                                            </td>
-                                            <td className="px-4 py-3 sm:px-6 sm:py-4 text-slate-600 text-xs sm:text-sm">
-                                                {activeTab === 'masuk' ? letter.pengirim : letter.tujuan}
-                                            </td>
-                                            <td className="hidden sm:table-cell px-6 py-4 text-slate-500">
-                                                {letter.rawDate ? new Date(letter.rawDate).toLocaleDateString("id-ID", { day: 'numeric', month: 'long', year: 'numeric' }) : "-"}
-                                            </td>
-                                            <td className="hidden md:table-cell px-6 py-4 text-slate-600 text-xs">
-                                                {letter.penginput || "-"}
-                                            </td>
-                                        </tr>
-                                    ))
+                                    .map((letter, index) => {
+                                        const hasFile = !!(letter.fileUrl || letter.file_url || letter.url || letter.link || letter.lampiran);
+                                        return (
+                                            <tr key={index} className="hover:bg-slate-50/50 transition-colors">
+                                                <td className="px-4 py-3 sm:px-6 sm:py-4 font-medium text-slate-900 text-xs sm:text-sm font-mono">
+                                                    {letter.nomor}
+                                                </td>
+                                                <td className="px-4 py-3 sm:px-6 sm:py-4 text-slate-600 max-w-[150px] sm:max-w-[200px] truncate" title={letter.perihal}>
+                                                    {letter.perihal}
+                                                </td>
+                                                <td className="px-4 py-3 sm:px-6 sm:py-4 text-slate-600 text-xs sm:text-sm">
+                                                    {activeTab === 'masuk' ? letter.pengirim : letter.tujuan}
+                                                </td>
+                                                <td className="hidden sm:table-cell px-6 py-4 text-slate-500">
+                                                    {letter.rawDate ? new Date(letter.rawDate).toLocaleDateString("id-ID", { day: 'numeric', month: 'long', year: 'numeric' }) : "-"}
+                                                </td>
+                                                <td className="hidden md:table-cell px-6 py-4 text-slate-600 text-xs">
+                                                    {letter.penginput || "-"}
+                                                </td>
+                                                <td className="px-4 py-3 sm:px-6 sm:py-4 text-center">
+                                                    {activeTab === 'keluar' ? (
+                                                        hasFile ? (
+                                                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                                                Terupload
+                                                            </span>
+                                                        ) : (
+                                                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700 border border-red-300 animate-pulse">
+                                                                🔴 Belum Upload
+                                                            </span>
+                                                        )
+                                                    ) : (
+                                                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">
+                                                            Tercatat
+                                                        </span>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        );
+                                    })
                             ) : (
                                 <tr>
-                                    <td colSpan={5} className="px-6 py-8 text-center text-slate-500">
+                                    <td colSpan={6} className="px-6 py-8 text-center text-slate-500">
                                         Belum ada data {activeTab === 'masuk' ? 'surat masuk' : 'surat keluar'}.
                                     </td>
                                 </tr>
@@ -406,7 +469,7 @@ export default function AdminDashboardPage() {
                 </div>
                 <div className="p-4 border-t border-slate-100 bg-slate-50/50 text-center">
                     <Link
-                        href={activeTab === 'masuk' ? "/admin/riwayat/surat-masuk" : "/admin/riwayat/surat-keluar"}
+                        href={activeTab === 'masuk' ? "/admin/riwayat/surat-masuk" : "/admin/surat-keluar"}
                         className="text-sm text-blue-600 font-medium hover:underline"
                     >
                         Lihat Semua Riwayat {activeTab === 'masuk' ? 'Surat Masuk' : 'Surat Keluar'}

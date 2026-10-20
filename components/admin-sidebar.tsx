@@ -1,8 +1,6 @@
 "use client";
 
-"use client";
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { FileText, CheckCircle2, Settings, Users, RefreshCw, X, LayoutDashboard, PenTool, Inbox, History, BookOpen } from "lucide-react";
@@ -20,7 +18,7 @@ const MENU_ITEMS = [
         roles: ["admin", "guru"],
     },
     {
-        title: "Input Surat Keluar",
+        title: "Surat Keluar",
         href: "/admin/surat-keluar",
         icon: PenTool,
         roles: ["admin", "guru"],
@@ -61,6 +59,29 @@ export function AdminSidebar() {
     const pathname = usePathname();
     const { user } = useUser();
     const { isCollapsed, toggleCollapse, isMobileOpen, closeMobile } = useSidebar();
+    const [unuploadedCount, setUnuploadedCount] = useState<number>(0);
+
+    // Fetch unuploaded count to show attention badge
+    useEffect(() => {
+        const fetchCount = async () => {
+            try {
+                const res = await fetch("/api/surat-keluar", { cache: "no-store" });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (Array.isArray(data)) {
+                        const count = data.filter((item: any) => !(item.fileUrl || item.file_url || item.url || item.link || item.lampiran)).length;
+                        setUnuploadedCount(count);
+                    }
+                }
+            } catch (e) {
+                // ignore
+            }
+        };
+
+        fetchCount();
+        const interval = setInterval(fetchCount, 60000);
+        return () => clearInterval(interval);
+    }, [pathname]);
 
     // Map user role to sidebar role
     // If user is Admin, show everything. If Guru/Member, hide restricted items.
@@ -106,11 +127,6 @@ export function AdminSidebar() {
 
                 <nav className="flex-1 p-4 space-y-2">
                     {MENU_ITEMS.filter((item) => item.roles.includes(userRole)).map((item) => {
-                        // Adjust href for member routes if needed, or keep as is if we redirect/rewrite
-                        // For now, we'll assume we want to link to /member/... for members
-                        // But since we are reusing components, maybe we can just keep the hrefs if we make the components aware
-                        // OR, better: dynamically replace /admin with /member in hrefs if user is not admin
-
                         let href = item.href;
                         if (userRole !== "admin" && href.startsWith("/admin")) {
                             href = href.replace("/admin", "/member");
@@ -119,6 +135,8 @@ export function AdminSidebar() {
                         const isActive = href === "/admin" || href === "/member"
                             ? pathname === href
                             : pathname.startsWith(href);
+
+                        const isSuratKeluar = item.href === "/admin/surat-keluar";
 
                         return (
                             <Link
@@ -132,16 +150,41 @@ export function AdminSidebar() {
                                     isCollapsed && "justify-center px-2"
                                 )}
                             >
-                                <item.icon className={cn("w-5 h-5 flex-shrink-0", isActive ? "text-blue-600" : "text-slate-400")} />
+                                <div className="relative flex items-center justify-center">
+                                    <item.icon className={cn("w-5 h-5 flex-shrink-0", isActive ? "text-blue-600" : "text-slate-400")} />
+                                    {/* Collapsed attention badge */}
+                                    {isCollapsed && isSuratKeluar && unuploadedCount > 0 && (
+                                        <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+                                        </span>
+                                    )}
+                                </div>
 
                                 {!isCollapsed && (
-                                    <span className="whitespace-nowrap">{item.title}</span>
+                                    <>
+                                        <span className="whitespace-nowrap">{item.title}</span>
+                                        {/* Expanded attention badge */}
+                                        {isSuratKeluar && unuploadedCount > 0 && (
+                                            <span
+                                                className="ml-auto bg-red-600 text-white text-[11px] font-bold px-2 py-0.5 rounded-full shadow-sm shadow-red-600/30 animate-pulse"
+                                                title={`${unuploadedCount} surat keluar belum di-upload file`}
+                                            >
+                                                {unuploadedCount}
+                                            </span>
+                                        )}
+                                    </>
                                 )}
 
                                 {/* Custom Tooltip for Collapsed State */}
                                 {isCollapsed && (
-                                    <div className="absolute left-full ml-4 px-3 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-lg shadow-blue-600/20 pointer-events-none z-50">
-                                        {item.title}
+                                    <div className="absolute left-full ml-4 px-3 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-lg shadow-blue-600/20 pointer-events-none z-50 flex items-center gap-2">
+                                        <span>{item.title}</span>
+                                        {isSuratKeluar && unuploadedCount > 0 && (
+                                            <span className="bg-red-500 text-white px-1.5 py-0.2 rounded-full text-[10px]">
+                                                {unuploadedCount} belum upload
+                                            </span>
+                                        )}
                                         {/* Arrow */}
                                         <div className="absolute top-1/2 -left-1 -translate-y-1/2 border-4 border-transparent border-r-blue-600" />
                                     </div>
